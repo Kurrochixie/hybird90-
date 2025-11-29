@@ -1,0 +1,6 @@
+# Ignore backup folders from Dart analysis
+backup_original/
+backup/
+docs/
+android/.gradle/
+android/.kotlin/

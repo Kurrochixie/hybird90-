@@ -1,0 +1,5 @@
+- [x] Add audioplayers dependency to pubspec.yaml
+- [ ] Add sound file (drill_alert.mp3) to assets/sounds/ (user needs to add)
+- [x] Update pubspec.yaml assets to include sounds
+- [x] Modify control.dart to play sound when drill is activated
+- [x] Run flutter pub get

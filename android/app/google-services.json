@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "742158479545",
+    "firebase_url": "https://testing1do-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "testing1do",
+    "storage_bucket": "testing1do.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:742158479545:android:3b43ca2f769f1325e7ab68",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC69zY0U35iz0lhEf3FPauqHemlTZ--41A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

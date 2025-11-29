@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "firebase": {
+      "command": "node",
+      "args": ["d:\\01_DATA CODING DDS MOBILE\\RAR\\test\\flutter_application_1\\mcp-firebase-server\\index.js"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "d:\\01_DATA CODING DDS MOBILE\\RAR\\test\\flutter_application_1\\service-account-key.json"
+      }
+    }
+  }
+}

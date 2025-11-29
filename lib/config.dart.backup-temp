@@ -1,0 +1,377 @@
+import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'interface_settings.dart';
+import 'main.dart';
+import 'services/auth_service.dart';
+import 'utils/validation_helpers.dart';
+
+class ConfigPage extends StatefulWidget {
+  final VoidCallback? onConfigDone;
+  final VoidCallback? onBackPressed;
+
+  const ConfigPage({super.key, this.onConfigDone, this.onBackPressed});
+
+  @override
+  State<ConfigPage> createState() => _ConfigPageState();
+}
+
+class _ConfigPageState extends State<ConfigPage> {
+  late final TextEditingController apiKeyController;
+  late final TextEditingController appIdController;
+  late final TextEditingController messagingSenderIdController;
+  late final TextEditingController projectIdController;
+  late final TextEditingController databaseURLController;
+  late final TextEditingController serverKeyController;
+
+  // Form key for validation
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  // Visibility toggles for sensitive data
+  bool _showApiKey = false;
+  bool _showServerKey = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize controllers with environment variables
+    apiKeyController = TextEditingController(text: dotenv.env['FIREBASE_API_KEY'] ?? '');
+    appIdController = TextEditingController(text: dotenv.env['FIREBASE_APP_ID'] ?? '');
+    messagingSenderIdController = TextEditingController(text: dotenv.env['FIREBASE_MESSAGING_SENDER_ID'] ?? '');
+    projectIdController = TextEditingController(text: dotenv.env['FIREBASE_PROJECT_ID'] ?? '');
+    databaseURLController = TextEditingController(text: dotenv.env['FIREBASE_DATABASE_URL'] ?? '');
+    serverKeyController = TextEditingController(text: dotenv.env['FCM_SERVER_KEY'] ?? '');
+  }
+  
+  final AuthService _authService = AuthService();
+
+  bool _isSaving = false;
+  bool _noInternet = false;
+  bool _showNoInternetBanner = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                  const SizedBox(height: 20),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          color: Colors.grey,
+                          splashColor: Colors.transparent,
+                          highlightColor: Colors.transparent,
+                          onPressed: () {
+                            if (widget.onBackPressed != null) {
+                              widget.onBackPressed!();
+                            } else if (Navigator.canPop(context)) {
+                              Navigator.pop(context);
+                            } else {
+                              Navigator.pushReplacementNamed(context, '/login');
+                            }
+                          },
+                        ),
+                      ),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          double fontSize = 30;
+                          if (constraints.maxWidth < 300) {
+                            fontSize = 20;
+                          } else if (constraints.maxWidth < 400) {
+                            fontSize = 25;
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 48), // padding to avoid overlap with back button
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                'CONFIGURATION',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w300,
+                                  fontSize: fontSize,
+                                  letterSpacing: 4,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+                  _buildLabeledTextField('API Key', apiKeyController),
+                  const SizedBox(height: 20),
+                  _buildLabeledTextField('App ID', appIdController),
+                  const SizedBox(height: 20),
+                  _buildLabeledTextField('Messaging Sender ID', messagingSenderIdController),
+                  const SizedBox(height: 20),
+                  _buildLabeledTextField('Project ID', projectIdController),
+                  const SizedBox(height: 20),
+                  _buildLabeledTextField('Database URL', databaseURLController),
+                  const SizedBox(height: 20),
+                  _buildLabeledTextField('FCM Server Key', serverKeyController),
+                  const SizedBox(height: 30),
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            double buttonWidth = constraints.maxWidth * 0.6;
+                            if (buttonWidth < 150) buttonWidth = 150;
+                            if (buttonWidth > 300) buttonWidth = 300;
+                            return Column(
+                              children: [
+                                SizedBox(
+                                  width: buttonWidth,
+                                  height: 48,
+                                  child: ElevatedButton(
+                                    onPressed: _isSaving ? null : _saveConfig,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _noInternet ? Colors.grey : const Color.fromARGB(255, 26, 117, 29),
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      elevation: 4,
+                                    ),
+                                    child: _isSaving
+                                        ? const SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : _noInternet
+                                            ? const Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(Icons.refresh),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'Retry',
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.w300,
+                                                      fontSize: 18,
+                                                      letterSpacing: 2,
+                                                    ),
+                                                  ),
+                                                ],
+                                              )
+                                            : const Center(
+                                                child: Text(
+                                                  'SAVE',
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.w300,
+                                                    fontSize: 18,
+                                                    letterSpacing: 2,
+                                                  ),
+                                                ),
+                                              ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: buttonWidth,
+                                  height: 48,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => const InterfaceSettingsPage()),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color.fromARGB(255, 226, 226, 226),
+                                      foregroundColor: Colors.black,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      elevation: 4,
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        'PANEL SETTINGS',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w300,
+                                          fontSize: 18,
+                                          letterSpacing: 2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+          if (_showNoInternetBanner)
+            Positioned(
+              top: 60,
+              left: 16,
+              right: 16,
+
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.wifi_off, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Check your internet connection',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+
+  Future<void> _saveConfig() async {
+    // Validate form first
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    var connectivityResults = await Connectivity().checkConnectivity();
+    bool hasInternet = !connectivityResults.contains(ConnectivityResult.none);
+
+    if (!hasInternet) {
+      setState(() {
+        _noInternet = true;
+        _isSaving = false;
+        _showNoInternetBanner = true;
+      });
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          setState(() {
+            _showNoInternetBanner = false;
+          });
+        }
+      });
+      return;
+    }
+
+    setState(() {
+      _noInternet = false;
+      _showNoInternetBanner = false;
+      _isSaving = true;
+    });
+
+    try {
+      await _authService.updateConfigStatus(
+        configDone: true,
+        settingsDone: true,
+      );
+      
+      if (widget.onConfigDone != null) {
+        widget.onConfigDone!();
+      }
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving config: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildLabeledTextField(String label, TextEditingController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w300,
+            fontSize: 16,
+            letterSpacing: 1,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+        ),
+      ],
+    );
+  }
+}

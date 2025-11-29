@@ -1,0 +1,165 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        ".write": "$uid === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        ".validate": "auth != null && $uid === auth.uid",
+        "username": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z][a-zA-Z0-9_]*$/) && newData.val().length >= 3 && newData.val().length <= 20"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/) && newData.val().length <= 254"
+        },
+        "phone": {
+          ".validate": "newData.isString() && newData.val().matches(/^(\\+62|62|0)[0-9]{9,12}$/)"
+        },
+        "lastLogin": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "fcmToken": {
+          ".validate": "newData.isString() && newData.val().length >= 100 && newData.val().length <= 200"
+        },
+        "$other": {
+          ".validate": false
+        }
+      },
+      ".read": "root.child('users').child(auth.uid).child('isAdmin').val() === true",
+      ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true"
+    },
+    "projectInfo": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+      "projectName": {
+        ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 50 && newData.val().matches(/^[a-zA-Z0-9\\s\\-_]+$/)"
+      },
+      "activeZone": {
+        ".validate": "newData.isString() && (newData.val().length == 0 || (newData.val().length <= 50 && newData.val().matches(/^[a-zA-Z0-9\\s\\-_()]+$/)))"
+      },
+      "lastUpdateTime": {
+        ".validate": "newData.isNumber() && newData.val() > 0"
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "systemStatus": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$category": {
+        "status": {
+          ".validate": "newData.isBoolean()"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "system_status_bridge": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "data": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.isString() && newData.val().length <= 500"
+      },
+      "led_status": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.isString() && newData.val().matches(/^[0-9a-fA-F]+$/) && newData.val().length <= 100"
+      },
+      "status": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "timestamp": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "connection": {
+          ".validate": "newData.isBoolean()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      },
+      "user_input": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "data": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "timestamp": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "userId": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "$other": {
+          ".validate": false
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "history": {
+      "statusLogs": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        "$logId": {
+          ".validate": "newData.hasChildren(['status', 'timestamp', 'message', 'userId'])",
+          "status": {
+            ".validate": "newData.isString() && newData.val().matches(/^(Normal|Alarm|Trouble)$/"
+          },
+          "timestamp": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          },
+          "message": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "userId": {
+            ".validate": "newData.isString() && (newData.val() === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "recentActivity": {
+      ".read": "auth != null",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true",
+      ".validate": "newData.isString() && newData.val().length <= 1000"
+    },
+    "user_profiles": {
+      "$userId": {
+        ".read": "$userId === auth.uid || root.child('users').child(auth.uid).child('isAdmin').val() === true",
+        ".write": "$userId === auth.uid",
+        ".validate": "auth != null && $userId === auth.uid",
+        "profileImageUrl": {
+          ".validate": "newData.isString() && newData.val().matches(/^https?:\\/\\/.+\\.(jpg|jpeg|png|gif)$/i)"
+        },
+        "uploadedAt": {
+          ".validate": "newData.isNumber() && newData.val() > 0"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "moduleNames": {
+      ".read": "auth != null",
+      ".write": "root.child('users').child(auth.uid).child('isAdmin').val() === true"
+    }
+  }
+}

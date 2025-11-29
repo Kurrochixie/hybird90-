@@ -1,0 +1,46 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User profile images
+    match /user_profiles/{userId}/{allPaths=**} {
+      allow read: if request.auth != null && (request.auth.uid == userId ||
+                   request.auth.token.isAdmin == true);
+      allow write: if request.auth != null && request.auth.uid == userId &&
+                   request.resource.size < 5 * 1024 * 1024 && // 5MB limit
+                   request.resource.contentType.matches('image/.*') &&
+                   request.resource.name.matches('^[a-zA-Z0-9._-]+$');
+    }
+
+    // ESP32 data files (if any)
+    match /esp32_data/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true &&
+                   request.resource.size < 1 * 1024 * 1024 && // 1MB limit
+                   (request.resource.contentType.matches('text/.*') ||
+                    request.resource.contentType.matches('application/json.*'));
+    }
+
+    // Project files (images, documents, etc.)
+    match /project_files/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true &&
+                   request.resource.size < 10 * 1024 * 1024 && // 10MB limit
+                   (request.resource.contentType.matches('image/.*') ||
+                    request.resource.contentType.matches('application/pdf.*') ||
+                    request.resource.contentType.matches('text/.*'));
+    }
+
+    // System logs and temporary files
+    match /system_logs/{allPaths=**} {
+      allow read: if request.auth != null && request.auth.token.isAdmin == true;
+      allow write: if request.auth != null && request.auth.token.isAdmin == true &&
+                   request.resource.size < 100 * 1024 && // 100KB limit
+                   request.resource.contentType.matches('text/.*');
+    }
+
+    // Deny all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
