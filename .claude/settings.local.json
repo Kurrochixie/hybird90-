@@ -75,7 +75,8 @@
       "Bash(./generate_keystore.bat:*)",
       "Bash(python:*)",
       "Bash(keytool:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(git config:*)"
     ],
     "deny": [],
     "ask": []
